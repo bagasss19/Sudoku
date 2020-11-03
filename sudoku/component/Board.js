@@ -1,30 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Button } from 'react-native';
+import { StyleSheet, Text, View, Button, TextInput, Alert } from 'react-native';
 import { Col, Row, Grid } from "react-native-easy-grid"
 
-export default function Board() {
+export default function Board({ route, navigation }) {
     const [number, setNumber] = useState([])
-    // const [board, setBoard] = useState([])
+    const { level, name } = route.params
+    const [isLoading, setLoading] = useState(true)
 
-    function board(number) {
-        let newnum = number.board
-        console.log(newnum.toString(), "<<<<<<<<<<newnum")
-        let numstring = newnum.toString().replaceAll(',', '')
-        console.log(numstrin, "<<<<<<<<<<NUMSTRING")
-        let arr = []
-        let count = 0
-        for (let i = 0; i < 9; i++) {
-            let tmp = []
-            for (let j = 0; j < 9; j++) {
-                tmp.push(numstring[count])
-                count++
-            }
-            arr.push(tmp)
-        }
-        console.log(arr, "<<<<<<<<HASIL ARR")
-        return arr
-    }
     const encodeBoard = (board) => board.reduce((result, row, i) => result + `%5B${encodeURIComponent(row)}%5D${i === board.length - 1 ? '' : '%2C'}`, '')
 
     const encodeParams = (params) =>
@@ -41,46 +24,90 @@ export default function Board() {
             .then(response => response.json())
             .then(response => {
                 console.log(response.status)
-                alert(response.status)
+                if (response.status == 'solved') {
+                    Alert.alert("Good Job!", 'You solve this Puzzle!',
+                        [
+                            { text: "Ok", onPress: () =>  navigation.navigate('Finish', {
+                                name
+                            }) }
+                        ])
+                } else {
+                    Alert.alert("This Puzzle is unsolved", "You put wrong answer")
+                }
             })
             .catch(console.warn)
     }
 
-    useEffect(() => {
-        fetch('https://sugoku.herokuapp.com/board?difficulty=easy')
+    function solve(number) {
+        setLoading(true)
+        fetch('https://sugoku.herokuapp.com/solve', {
+            method: 'POST',
+            body: encodeParams(number),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        })
+            .then(response => response.json())
+            .then(response => {
+                console.log(response)
+                setNumber({ board: response.solution })
+                setLoading(false)
+            })
+            .catch(console.warn)
+    }
+
+    function fetchData() {
+        fetch(`https://sugoku.herokuapp.com/board?difficulty=${level}`)
             .then(response => response.json())
             .then(data => {
                 setNumber(data)
-                board(data)
+                setLoading(false)
             })
             .catch(e => {
                 console.log(e)
             })
+    }
+
+    useEffect(() => {
+        fetchData()
     }, [])
 
+    if (isLoading) {
+        return <View style={styles.container}>
+            <Text style={styles.title}>Loading...</Text>
+        </View>
+    }
     return (
-        <View style={styles.container}>
+        <View style={[styles.container]}>
+            <Text style={{ padding: 10, fontSize: 42 }}> Level : {level} !</Text>
             <Text>{JSON.stringify(number.board)}</Text>
-            {/* <Text>{JSON.stringify(board(number))}</Text> */}
-            {/* <Grid>
-                <Col><Text>1</Text></Col>
-                <Col><Text>1</Text></Col>
-                <Col><Text>1</Text></Col>
-                
-            </Grid>
-            <Grid>
-                <Col><Text>1</Text></Col>
-                <Col><Text>1</Text></Col>
-                <Col><Text>1</Text></Col>
-            </Grid>
-            <Grid>
-                <Col><Text>1</Text></Col>
-                <Col><Text>1</Text></Col>
-                <Col><Text>1</Text></Col>
-            </Grid> */}
 
 
+            <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}>
+                {number.board.map((x, i) =>
+                    <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }} key={i}>
+                        {x.map((y, a) => {
+                            return <View
+                                style=
+                                {{
+                                    width: 30, height: 30, backgroundColor: 'white',
+                                    borderColor: "black", borderWidth: 1
+                                }} key={a}>
 
+                                <TextInput
+                                    style={{ height: 30, textAlign: "center" }}
+                                    // onChangeText={console.log("berubah")}
+                                    maxLength={1}
+                                    keyboardType={"numeric"}
+                                    defaultValue={`${y}`} />
+
+                            </View>
+
+                        })}
+                    </View>
+                )}
+            </View>
+
+
+            <View style={styles.margin}>
             <Button
                 onPress={() => {
                     validate(number)
@@ -88,6 +115,17 @@ export default function Board() {
                 title="Finish"
                 color="#841584"
             />
+            </View>
+
+
+            <View style={styles.margin2}>
+            <Button
+                onPress={() => {
+                    solve(number)
+                }}
+                title="Solve"
+                color="#841584"
+            /></View>
             <StatusBar style="auto" />
         </View>
     );
@@ -99,5 +137,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    margin: {
+        marginBottom: 10
+    },
+    margin2: {
+        marginBottom: 30
     },
 });
