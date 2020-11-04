@@ -21,8 +21,6 @@ export function FETCHBOARD(level) {
     };
 }
 
-
-
 export function GETBOARD(data) {
     return { type: "GETBOARD", data }
 }
