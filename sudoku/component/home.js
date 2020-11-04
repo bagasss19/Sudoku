@@ -47,6 +47,7 @@ export default function Home({ navigation }) {
                     color="#841584"
                 />
             </View>
+            
         </View>
     );
 }

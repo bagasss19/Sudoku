@@ -1,16 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Button, TextInput, Alert, ScrollView, ActivityIndicator } from 'react-native'
 import { useSelector, useDispatch } from 'react-redux'
-import { FETCHBOARD, SETLOADING, GETBOARD } from '../redux'
+import { FETCHBOARD, SETLOADING, GETBOARD, SETLEADERBOARD } from '../redux'
 
 export default function Board({ route, navigation }) {
     const board = useSelector(state => state.boards)
-    // const number2 = useSelector(state => state.boards2)
     const isLoading = useSelector(state => state.loading)
     const dispatch = useDispatch()
     const { level, name } = route.params
     const [board2, setBoard] = useState([])
-    //[[9,1,2,8,3,7,5,6,4],[3,4,5,1,2,6,7,8,9],[6,7,8,4,5,9,1,2,3]]
+    const [seconds, setSeconds] = useState(300)
+    const [play, setPlay] = useState(true)
+   
+    function toMinute(deadline) {
+        let minutes = Math.floor(deadline / 60) 
+        let seconds = deadline % 60
+    
+        let displayMinute = minutes < 10 ? `0${minutes}` : minutes
+        let displaySecond = seconds % 60 < 10 ? `0${seconds}` : seconds
+
+        return(`${displayMinute} : ${displaySecond}`)
+    }
+
+    if (seconds > 0 && play)  {
+        setTimeout(() => setSeconds(seconds - 1), 1000);
+    } else if (seconds == 0) {
+        Alert.alert("Time Out!", 'You,re Running out of time, you lose!',
+            [
+                {
+                    text: "Ok", onPress: () => navigation.navigate('Home')
+                }
+            ])
+    }
+
+    console.log(play, "<<<<<play")
 
     function editBoard(x, y, val) {
         let tempBoard = JSON.parse(JSON.stringify(board2))
@@ -18,8 +41,6 @@ export default function Board({ route, navigation }) {
         tempBoard.board[x][y] = Number(val)
         setBoard(tempBoard)
     }
-
-
 
     const encodeBoard = (board) => board.reduce((result, row, i) => result + `%5B${encodeURIComponent(row)}%5D${i === board.length - 1 ? '' : '%2C'}`, '')
 
@@ -38,11 +59,14 @@ export default function Board({ route, navigation }) {
             .then(response => {
                 console.log(response.status)
                 if (response.status == 'solved') {
+                    setPlay(false)
+                    const data = {name, seconds}
+                    dispatch(SETLEADERBOARD(data))
                     Alert.alert("Good Job!", 'You solve this Puzzle!',
                         [
                             {
                                 text: "Ok", onPress: () => navigation.navigate('Finish', {
-                                    name
+                                    name, seconds
                                 })
                             }
                         ])
@@ -62,7 +86,7 @@ export default function Board({ route, navigation }) {
         })
             .then(response => response.json())
             .then(response => {
-                console.log(response.solution, "<<<<Sasas")
+                // console.log(response.solution, "<<<<Sasas")
                 dispatch(GETBOARD({ board: response.solution }))
                 dispatch(SETLOADING(false))
             })
@@ -80,6 +104,7 @@ export default function Board({ route, navigation }) {
     if (isLoading) {
         return <View style={styles.container}>
             <ActivityIndicator size="large" />
+            <Text>Loading...</Text>
         </View>
     }
     return (
@@ -87,7 +112,9 @@ export default function Board({ route, navigation }) {
             <View style={[styles.container, { flex: 1 }]}>
 
                 <Text style={{ padding: 10, fontSize: 42 }}> Level : {level}</Text>
-                <Text>{JSON.stringify(board2 && board2.board)}</Text>
+                <Text style={{ padding: 10, fontSize: 35 }}> {toMinute(seconds)}</Text>
+
+                {/* <Text>{JSON.stringify(board2 && board2.board)}</Text> */}
 
 
                 <View style={[styles.margin, { flex: 1, flexDirection: 'row', flexWrap: 'wrap' }]}>
@@ -111,8 +138,8 @@ export default function Board({ route, navigation }) {
                                         maxLength={1}
                                         keyboardType={"numeric"}
                                         defaultValue={`${y}`}
-                                        editable={y > 0 ? false : true} 
-                                        />
+                                        editable={y > 0 ? false : true}
+                                    />
 
                                 </View>
                             })}

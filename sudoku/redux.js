@@ -3,7 +3,8 @@ import thunk from 'redux-thunk';
 
 const globalStore = {
     boards: [],
-    loading: true
+    loading: true,
+    leaderBoards: []
 }
 
 
@@ -29,6 +30,15 @@ export function SETLOADING(data) {
     return { type: "SETLOADING", data }
 }
 
+export function SETLEADERBOARD(data) {
+    console.log(data, "<<<<< ini data bro")
+    return { type: "SETLEADERBOARD", data }
+}
+
+export function DEFAULT() {
+    return { type: "default"}
+}
+
 function reducer(state = globalStore, action) {
     switch (action.type) {
         case 'GETBOARD':
@@ -36,6 +46,13 @@ function reducer(state = globalStore, action) {
 
         case 'SETLOADING':
             return { ...state, loading: action.data }
+
+
+        case 'SETLEADERBOARD':
+            let arr = state.leaderBoards
+            arr.push(action.data)
+            return { ...state, leaderBoards: arr }
+
 
         default:
             return state
