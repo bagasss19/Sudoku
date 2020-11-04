@@ -5,14 +5,18 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Board from './component/Board'
 import Home from './component/home'
 import Finish from './component/finish'
+import {Provider} from 'react-redux'
+import store from './redux'
 
 const Stack = createStackNavigator()
 
 
 export default function App() {
   return (
+    <Provider store={store}>
     <NavigationContainer>
     <Stack.Navigator>
+    
       <Stack.Screen
         name="Home"
         component={Home}
@@ -30,6 +34,7 @@ export default function App() {
       />
     </Stack.Navigator>
   </NavigationContainer>
+  </Provider>
   );
 }
 

@@ -1,12 +1,13 @@
-import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Button, TextInput, Alert } from 'react-native';
-import { Col, Row, Grid } from "react-native-easy-grid"
+import { StyleSheet, Text, View, Button, TextInput, Alert , ScrollView, ActivityIndicator} from 'react-native'
+import { useSelector, useDispatch } from 'react-redux'
+import {FETCHBOARD, SETLOADING, GETBOARD} from '../redux'
 
 export default function Board({ route, navigation }) {
-    const [number, setNumber] = useState([])
+    const number = useSelector(state => state.boards)
+    const isLoading = useSelector(state => state.loading)
+    const dispatch = useDispatch()
     const { level, name } = route.params
-    const [isLoading, setLoading] = useState(true)
 
     const encodeBoard = (board) => board.reduce((result, row, i) => result + `%5B${encodeURIComponent(row)}%5D${i === board.length - 1 ? '' : '%2C'}`, '')
 
@@ -39,7 +40,7 @@ export default function Board({ route, navigation }) {
     }
 
     function solve(number) {
-        setLoading(true)
+        dispatch(SETLOADING(true))
         fetch('https://sugoku.herokuapp.com/solve', {
             method: 'POST',
             body: encodeParams(number),
@@ -47,67 +48,66 @@ export default function Board({ route, navigation }) {
         })
             .then(response => response.json())
             .then(response => {
-                console.log(response)
-                setNumber({ board: response.solution })
-                setLoading(false)
+                console.log(response.solution, "<<<<Sasas")
+                dispatch(GETBOARD({board :response.solution}))
+                dispatch(SETLOADING(false))
             })
             .catch(console.warn)
     }
 
-    function fetchData() {
-        fetch(`https://sugoku.herokuapp.com/board?difficulty=${level}`)
-            .then(response => response.json())
-            .then(data => {
-                setNumber(data)
-                setLoading(false)
-            })
-            .catch(e => {
-                console.log(e)
-            })
-    }
-
     useEffect(() => {
-        fetchData()
+        dispatch(FETCHBOARD(level))
     }, [])
 
     if (isLoading) {
         return <View style={styles.container}>
-            <Text style={styles.title}>Loading...</Text>
+             <ActivityIndicator size="large" />
         </View>
     }
     return (
-        <View style={[styles.container]}>
-            <Text style={{ padding: 10, fontSize: 42 }}> Level : {level} !</Text>
+        <ScrollView style={{flex : 1}}>
+        <View style={[styles.container, {flex : 1}]}>
+            
+            <Text style={{ padding: 10, fontSize: 42 }}> Level : {level}</Text>
             <Text>{JSON.stringify(number.board)}</Text>
 
 
-            <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}>
+            <View style={[styles.margin, {flex : 1 , flexDirection: 'row', flexWrap: 'wrap' }]}>
                 {number.board.map((x, i) =>
-                    <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }} key={i}>
+                    <View style={{width : '33%' , flexDirection: 'row', flexWrap: 'wrap' ,  borderWidth: 2}} key={i}>
                         {x.map((y, a) => {
                             return <View
                                 style=
                                 {{
-                                    width: 30, height: 30, backgroundColor: 'white',
+                                    width: "33.3%", height: 50, backgroundColor: 'white',
                                     borderColor: "black", borderWidth: 1
                                 }} key={a}>
 
                                 <TextInput
-                                    style={{ height: 30, textAlign: "center" }}
+                                    style={{ height: 50, textAlign: "center" }}
                                     // onChangeText={console.log("berubah")}
                                     maxLength={1}
                                     keyboardType={"numeric"}
-                                    defaultValue={`${y}`} />
+                                    defaultValue={`${y}`} 
+                                    editable={y > 0 ? false : true}/>
 
                             </View>
-
                         })}
                     </View>
                 )}
             </View>
 
 
-            <View style={styles.margin}>
+            <View style={[styles.margin, {alignItems:"center"}]}>
+            <Button
+                onPress={() => {
+                    solve(number)
+                }}
+                title="Solve"
+                color="#841584"
+            /></View>
+
+            <View style={[styles.margin2, {alignItems:"center"}]}>
             <Button
                 onPress={() => {
                     validate(number)
@@ -117,17 +117,8 @@ export default function Board({ route, navigation }) {
             />
             </View>
 
-
-            <View style={styles.margin2}>
-            <Button
-                onPress={() => {
-                    solve(number)
-                }}
-                title="Solve"
-                color="#841584"
-            /></View>
-            <StatusBar style="auto" />
         </View>
+        </ScrollView>
     );
 }
 
@@ -139,9 +130,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     margin: {
-        marginBottom: 10
+        marginBottom: 20
     },
     margin2: {
         marginBottom: 30
-    },
+    }
 });

@@ -28,7 +28,6 @@ export default function Home({ navigation }) {
 
             <Picker
                 selectedValue={level}
-                de
                 style={{ height: 50, width: 150 , marginBottom : 20}}
                 onValueChange={(itemValue) => setLevel(itemValue)}
             >
