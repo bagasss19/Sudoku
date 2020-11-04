@@ -137,7 +137,7 @@ export default function Board({ route, navigation }) {
                                         }
                                         maxLength={1}
                                         keyboardType={"numeric"}
-                                        defaultValue={`${y}`}
+                                        defaultValue={y > 0 ? `${y}` : ''}
                                         editable={y > 0 ? false : true}
                                     />
 
